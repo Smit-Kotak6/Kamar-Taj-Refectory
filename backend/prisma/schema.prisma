@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BookingStatus {
+  BOOKED
+  CANCELLED_USER
+  CANCELLED_LEAVE
+  CANCELLED_CLOSED
+  REDEEMED
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+model User {
+  id         String      @id @default(cuid())
+  name       String
+  email      String      @unique
+  role       String      @default("STUDENT")
+  membership Membership?
+  bookings   Booking[]
+}
+
+model Membership {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  startDate DateTime  @db.Date
+  endDate   DateTime? @db.Date
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Closure {
+  id       String    @id @default(cuid())
+  date     DateTime  @db.Date
+  mealType MealType?
+
+  @@unique([date, mealType])
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  studentId    String
+  mealType     MealType
+  mealDate     DateTime      @db.Date
+  status       BookingStatus @default(BOOKED)
+  qrTokenHash  String        @unique
+  manualCode   String        @unique
+  redeemedAt   DateTime?
+  redeemedById String?
+  student      User          @relation(fields: [studentId], references: [id])
+  consumption  Consumption?
+
+  @@unique([studentId, mealType, mealDate])
+}
+
+model Consumption {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  staffId   String
+  createdAt DateTime @default(now())
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+}
