@@ -4,6 +4,7 @@
  *
  * Run from backend/:   npx tsx src/testRace.ts
  */
+import crypto from "crypto";
 import {
   prisma,
   redeemMeal,
@@ -32,9 +33,10 @@ async function main() {
       membership: { create: { startDate: new Date("2026-01-01") } },
     },
   });
-  const { token, qrTokenHash, manualCode } = generateBookingSecrets();
+  const bookingId = crypto.randomUUID();
+  const { token, qrTokenHash, manualCode } = generateBookingSecrets(bookingId);
   const booking = await prisma.booking.create({
-    data: { studentId: student.id, mealType: "LUNCH", mealDate: today, qrTokenHash, manualCode },
+    data: { id: bookingId, studentId: student.id, mealType: "LUNCH", mealDate: today, qrTokenHash, manualCode },
   });
 
   try {

@@ -55,9 +55,22 @@ export const prisma = new PrismaClient({ adapter });
 // ---------------------------------------------------------------------------
 const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
 
-/** Called when a booking is CREATED. Store the hash + manual code; show token as QR. */
-export function generateBookingSecrets() {
-  const token = crypto.randomBytes(32).toString("base64url"); // unpredictable, no personal data
+/**
+ * The QR token is HMAC-SHA256(QR_SECRET, bookingId):
+ *  - unforgeable without the server secret
+ *  - re-computable, so a student can open their QR any time
+ *  - contains no personal data
+ * The DB still stores only sha256(token) for lookups.
+ */
+export function tokenForBooking(bookingId: string): string {
+  const secret = process.env.QR_SECRET;
+  if (!secret) throw new Error("QR_SECRET is missing in .env");
+  return crypto.createHmac("sha256", secret).update(bookingId).digest("base64url");
+}
+
+/** Called when a booking is CREATED (pass the booking's id). */
+export function generateBookingSecrets(bookingId: string) {
+  const token = tokenForBooking(bookingId);
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I confusion
   const pick = () => alphabet[crypto.randomInt(alphabet.length)];
   const manualCode = Array.from({ length: 8 }, pick).join("");
