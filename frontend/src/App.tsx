@@ -3,6 +3,7 @@ import AppShell from './components/layout/AppShell'
 import PlaceholderPage from './components/PlaceholderPage'
 import ApiTest from './ApiTest'
 import { StudentDashboard } from './pages/student/StudentDashboard'
+import { Leave } from './pages/student/Leave'
 
 export default function App() {
   return (
@@ -15,7 +16,7 @@ export default function App() {
 
         <Route path="/student" element={<StudentDashboard />} />
         <Route path="/student/meals" element={<PlaceholderPage title="My Meals" />} />
-        <Route path="/student/leave" element={<PlaceholderPage title="Leave" />} />
+        <Route path="/student/leave" element={<Leave />} />
         <Route path="/student/qr" element={<PlaceholderPage title="My QR" />} />
         <Route path="/student/preferences" element={<PlaceholderPage title="Preferences" />} />
         <Route path="/student/billing" element={<PlaceholderPage title="Billing" />} />
