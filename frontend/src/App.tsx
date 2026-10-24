@@ -4,6 +4,7 @@ import PlaceholderPage from './components/PlaceholderPage'
 import ApiTest from './ApiTest'
 import { StudentDashboard } from './pages/student/StudentDashboard'
 import { Leave } from './pages/student/Leave'
+import { QrPage } from './pages/student/QrPage'
 
 export default function App() {
   return (
@@ -17,7 +18,7 @@ export default function App() {
         <Route path="/student" element={<StudentDashboard />} />
         <Route path="/student/meals" element={<PlaceholderPage title="My Meals" />} />
         <Route path="/student/leave" element={<Leave />} />
-        <Route path="/student/qr" element={<PlaceholderPage title="My QR" />} />
+        <Route path="/student/qr" element={<QrPage />} />
         <Route path="/student/preferences" element={<PlaceholderPage title="Preferences" />} />
         <Route path="/student/billing" element={<PlaceholderPage title="Billing" />} />
         <Route path="/student/notifications" element={<PlaceholderPage title="Notifications" />} />

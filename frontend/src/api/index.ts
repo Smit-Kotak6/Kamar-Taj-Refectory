@@ -153,3 +153,11 @@ export async function reopenMeal(date: string, mealType: MealType | 'all'): Prom
   await delay();
   return db.reopenMeal(date, mealType);
 }
+
+// ------------------------------------------------------------- student
+
+/** The signed-in student. The mock returns a fixed demo student. */
+export async function getStudentProfile(): Promise<{ id: string; name: string }> {
+  await delay(80);
+  return { ...db.STUDENT };
+}
