@@ -1,10 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from './components/layout/AppShell'
 import PlaceholderPage from './components/PlaceholderPage'
+import ApiTest from './ApiTest'
 
 export default function App() {
   return (
     <Routes>
+      {/* Temporary: remove once real pages call the API */}
+      <Route path="/api-test" element={<ApiTest />} />
+
       <Route element={<AppShell />}>
         <Route index element={<Navigate to="/student" replace />} />
 
