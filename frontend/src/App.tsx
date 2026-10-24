@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from './components/layout/AppShell'
 import PlaceholderPage from './components/PlaceholderPage'
 import ApiTest from './ApiTest'
+import { StudentDashboard } from './pages/student/StudentDashboard'
 
 export default function App() {
   return (
@@ -12,7 +13,7 @@ export default function App() {
       <Route element={<AppShell />}>
         <Route index element={<Navigate to="/student" replace />} />
 
-        <Route path="/student" element={<PlaceholderPage title="Student Home" />} />
+        <Route path="/student" element={<StudentDashboard />} />
         <Route path="/student/meals" element={<PlaceholderPage title="My Meals" />} />
         <Route path="/student/leave" element={<PlaceholderPage title="Leave" />} />
         <Route path="/student/qr" element={<PlaceholderPage title="My QR" />} />
