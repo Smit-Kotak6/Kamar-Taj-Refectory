@@ -1,18 +1,9 @@
-import { useEffect, useState } from 'react'
-import { getCurrentUser, type User } from '../api/session'
+import { useMemo } from 'react'
+import type { Role } from '../config/navigation'
+import { getDemoUser } from '../api/session'
+import type { DemoUser } from '../api/session'
 
-export function useCurrentUser() {
-  const [user, setUser] = useState<User | null>(null)
-
-  useEffect(() => {
-    let active = true
-    getCurrentUser().then((u) => {
-      if (active) setUser(u)
-    })
-    return () => {
-      active = false
-    }
-  }, [])
-
-  return user
+/** The signed-in user for a role. Mock for now; swap getDemoUser for a real session call later. */
+export function useCurrentUser(role: Role): DemoUser {
+  return useMemo(() => getDemoUser(role), [role])
 }

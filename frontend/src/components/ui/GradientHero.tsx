@@ -43,7 +43,8 @@ export function GradientHero({
       <div
         className={cx(
           "grid items-center gap-8 p-6 sm:p-10 lg:p-12",
-          aside && "lg:grid-cols-[1.1fr_1fr]",
+          // A ternary (not `aside &&`) because ReactNode can be 0, which cx rejects.
+          aside ? "lg:grid-cols-[1.1fr_1fr]" : undefined,
         )}
       >
         <div className="min-w-0">

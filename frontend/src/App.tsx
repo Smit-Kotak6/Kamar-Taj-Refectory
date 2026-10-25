@@ -10,6 +10,8 @@ import { Notifications } from './pages/student/Notifications'
 import Billing from './pages/student/Billing'
 import Scanner from './pages/staff/Scanner'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
+import { Planning } from './pages/admin/Planning'
+import { Closures } from './pages/admin/Closures'
 
 export default function App() {
   return (
@@ -31,8 +33,8 @@ export default function App() {
         <Route path="/staff/scan" element={<Scanner />} />
 
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/planning" element={<PlaceholderPage title="Meal Planning" />} />
-        <Route path="/admin/closures" element={<PlaceholderPage title="Closures" />} />
+        <Route path="/admin/planning" element={<Planning />} />
+        <Route path="/admin/closures" element={<Closures />} />
         <Route path="/admin/forecast" element={<PlaceholderPage title="Demand Forecast" />} />
         <Route path="/admin/waste" element={<PlaceholderPage title="Waste & Sustainability" />} />
         <Route path="/admin/reports" element={<PlaceholderPage title="Reports" />} />

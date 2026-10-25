@@ -32,6 +32,16 @@ import type {
 export * from './types';
 export type { Payment, PaymentMethod } from './payments';
 
+/** A date on which one or more meals are closed (used by the admin Closures page). */
+export interface Closure {
+  /** 'YYYY-MM-DD' */
+  date: string;
+  /** The closed meals on that date, in breakfast, lunch, dinner order. */
+  mealTypes: MealType[];
+  /** true when all three meals are closed. */
+  entireMess: boolean;
+}
+
 const FAKE_DELAY_MS = 250;
 
 function delay(ms: number = FAKE_DELAY_MS): Promise<void> {
@@ -147,6 +157,16 @@ export async function getTimings(date?: string): Promise<Timing[]> {
   return db.getTimings(date);
 }
 
+/**
+ * The default timings that apply to every day, ignoring any date-specific override.
+ * (Mock: a past date can never have an override, so it returns the defaults.
+ * A real backend should expose a dedicated endpoint.)
+ */
+export async function getDefaultTimings(): Promise<Timing[]> {
+  await delay();
+  return db.getTimings('1970-01-01');
+}
+
 /** With `date`: override that day only. Without: change the default for every day. */
 export async function saveTimingOverride(override: TimingOverride): Promise<Timing[]> {
   await delay();
@@ -163,6 +183,33 @@ export async function closeMeal(date: string, mealType: MealType | 'all'): Promi
 export async function reopenMeal(date: string, mealType: MealType | 'all'): Promise<Meal[]> {
   await delay();
   return db.reopenMeal(date, mealType);
+}
+
+/**
+ * Closures that have not finished yet, soonest first, looking `days` days ahead
+ * (today included). Meals whose service window has already ended are left out.
+ */
+export async function getUpcomingClosures(days: number = 30): Promise<Closure[]> {
+  await delay();
+  const now = Date.now();
+  const start = new Date();
+  const closures: Closure[] = [];
+
+  for (let offset = 0; offset < days; offset++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset);
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const closed = db
+      .getMeals(date)
+      .filter((meal) => meal.closed && new Date(meal.serviceEnd).getTime() > now);
+    if (closed.length > 0) {
+      closures.push({
+        date,
+        mealTypes: closed.map((meal) => meal.type),
+        entireMess: closed.length === 3,
+      });
+    }
+  }
+  return closures;
 }
 
 // ------------------------------------------------------------- student
