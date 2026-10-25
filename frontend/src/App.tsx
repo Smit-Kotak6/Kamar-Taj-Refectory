@@ -9,6 +9,7 @@ import { Preferences } from './pages/student/Preferences'
 import { Notifications } from './pages/student/Notifications'
 import Billing from './pages/student/Billing'
 import Scanner from './pages/staff/Scanner'
+import { AdminDashboard } from './pages/admin/AdminDashboard'
 
 export default function App() {
   return (
@@ -29,7 +30,7 @@ export default function App() {
 
         <Route path="/staff/scan" element={<Scanner />} />
 
-        <Route path="/admin" element={<PlaceholderPage title="Admin Overview" />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/planning" element={<PlaceholderPage title="Meal Planning" />} />
         <Route path="/admin/closures" element={<PlaceholderPage title="Closures" />} />
         <Route path="/admin/forecast" element={<PlaceholderPage title="Demand Forecast" />} />
