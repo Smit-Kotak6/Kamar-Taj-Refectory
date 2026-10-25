@@ -18,7 +18,8 @@ async function main() {
     },
   });
 
-  const today = new Date(new Date().toISOString().slice(0, 10));
+  const tz = process.env.INSTITUTE_TZ ?? "Asia/Kolkata";
+  const today = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date()));
   console.log("STAFF_ID  :", staff.id);
   console.log("STUDENT_ID:", student.id);
   for (const meal of ["BREAKFAST", "LUNCH", "DINNER"] as const) {

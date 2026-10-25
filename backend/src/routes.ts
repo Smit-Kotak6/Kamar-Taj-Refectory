@@ -23,7 +23,7 @@ export async function devAuth(req: AuthedRequest, _res: Response, next: NextFunc
   }
 }
 
-const requireRole =
+export const requireRole =
   (...roles: Role[]) =>
   (req: AuthedRequest, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: "Not logged in" });

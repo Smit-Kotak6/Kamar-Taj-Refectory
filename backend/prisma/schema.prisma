@@ -69,3 +69,45 @@ model Consumption {
   createdAt DateTime @default(now())
   booking   Booking  @relation(fields: [bookingId], references: [id])
 }
+
+model MealSchedule {
+  mealType     MealType @id
+  cutoffTime   String   // "HH:MM", institute local time
+  serviceStart String
+  serviceEnd   String
+}
+
+model MealOverride {
+  id           String   @id @default(cuid())
+  date         DateTime @db.Date
+  mealType     MealType
+  cutoffTime   String?
+  serviceStart String?
+  serviceEnd   String?
+
+  @@unique([date, mealType])
+}
+
+model DailyMealStat {
+  date     DateTime @db.Date
+  mealType MealType
+  booked   Int
+  consumed Int
+  source   String   @default("SYNTHETIC")
+
+  @@id([date, mealType])
+}
+
+model MealForecast {
+  date          DateTime @db.Date
+  mealType      MealType
+  booked        Int
+  expected      Int
+  low           Int
+  high          Int
+  predictedRate Float
+  modelInfo     String
+  createdAt     DateTime @default(now())
+
+  @@id([date, mealType])
+}
