@@ -8,6 +8,7 @@ import { QrPage } from './pages/student/QrPage'
 import { Preferences } from './pages/student/Preferences'
 import { Notifications } from './pages/student/Notifications'
 import Billing from './pages/student/Billing'
+import Scanner from './pages/staff/Scanner'
 
 export default function App() {
   return (
@@ -26,7 +27,7 @@ export default function App() {
         <Route path="/student/billing" element={<Billing />} />
         <Route path="/student/notifications" element={<Notifications />} />
 
-        <Route path="/staff/scan" element={<PlaceholderPage title="Scan" />} />
+        <Route path="/staff/scan" element={<Scanner />} />
 
         <Route path="/admin" element={<PlaceholderPage title="Admin Overview" />} />
         <Route path="/admin/planning" element={<PlaceholderPage title="Meal Planning" />} />
