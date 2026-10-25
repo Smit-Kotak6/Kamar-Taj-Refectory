@@ -5,6 +5,8 @@ import ApiTest from './ApiTest'
 import { StudentDashboard } from './pages/student/StudentDashboard'
 import { Leave } from './pages/student/Leave'
 import { QrPage } from './pages/student/QrPage'
+import { Preferences } from './pages/student/Preferences'
+import { Notifications } from './pages/student/Notifications'
 
 export default function App() {
   return (
@@ -19,9 +21,9 @@ export default function App() {
         <Route path="/student/meals" element={<PlaceholderPage title="My Meals" />} />
         <Route path="/student/leave" element={<Leave />} />
         <Route path="/student/qr" element={<QrPage />} />
-        <Route path="/student/preferences" element={<PlaceholderPage title="Preferences" />} />
+        <Route path="/student/preferences" element={<Preferences />} />
         <Route path="/student/billing" element={<PlaceholderPage title="Billing" />} />
-        <Route path="/student/notifications" element={<PlaceholderPage title="Notifications" />} />
+        <Route path="/student/notifications" element={<Notifications />} />
 
         <Route path="/staff/scan" element={<PlaceholderPage title="Scan" />} />
 
