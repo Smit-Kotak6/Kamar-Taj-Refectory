@@ -10,6 +10,7 @@
 //   }
 
 import * as db from './mock';
+import * as paymentsDb from './payments';
 import type {
   AdminOverview,
   BillingItem,
@@ -29,6 +30,7 @@ import type {
 } from './types';
 
 export * from './types';
+export type { Payment, PaymentMethod } from './payments';
 
 const FAKE_DELAY_MS = 250;
 
@@ -92,6 +94,15 @@ export async function getBilling(month?: string): Promise<BillingItem[]> {
 export async function getRebates(): Promise<RebateEntry[]> {
   await delay();
   return db.getRebates();
+}
+
+/** Payments the student made in a month. month = 'YYYY-MM'; defaults to the current month. */
+export async function getPayments(month?: string): Promise<paymentsDb.Payment[]> {
+  await delay();
+  const now = new Date();
+  const key =
+    month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  return paymentsDb.getPayments(key);
 }
 
 // ------------------------------------------------ preferences & notifications
