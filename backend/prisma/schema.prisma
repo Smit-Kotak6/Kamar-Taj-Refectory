@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  STAFF
+  ADMIN
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+enum BookingStatus {
+  BOOKED
+  CANCELLED_BY_STUDENT
+  CANCELLED_LEAVE
+  CANCELLED_MESS_CLOSED
+  REDEEMED
+  UNCONSUMED
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  name             String
+  email            String             @unique
+  password         String
+  role             Role               @default(STUDENT)
+  regNo            String?            @unique
+  roomNo           String?
+  phone            String?
+  membership       StudentMembership?
+  preference       StudentPreference?
+  bookings         MealBooking[]      @relation("StudentBookings")
+  redeemedBookings MealBooking[]      @relation("StaffRedemptions")
+  leaves           LeaveRequest[]
+  bills            BillingRecord[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model StudentMembership {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate DateTime
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model MealSchedule {
+  id               Int      @id @default(autoincrement())
+  mealType         MealType @unique
+  cutoffTime       String   // Format: "HH:mm" (24-hour, e.g. "10:30")
+  serviceStartTime String   // Format: "HH:mm" (24-hour, e.g. "12:00")
+  serviceEndTime   String   // Format: "HH:mm" (24-hour, e.g. "14:30")
+  updatedAt        DateTime @updatedAt
+}
+
+model MealScheduleOverride {
+  id               Int      @id @default(autoincrement())
+  date             String   // Format: "YYYY-MM-DD"
+  mealType         MealType
+  cutoffTime       String?
+  serviceStartTime String
+  serviceEndTime   String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([date, mealType])
+}
+
+model MessClosure {
+  id        Int       @id @default(autoincrement())
+  date      String    // Format: "YYYY-MM-DD"
+  mealType  MealType? // If null, applies to whole mess (all 3 meals)
+  reason    String
+  closedBy  Int
+  createdAt DateTime  @default(now())
+
+  @@unique([date, mealType])
+}
+
+model MealBooking {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  user         User          @relation("StudentBookings", fields: [userId], references: [id], onDelete: Cascade)
+  date         String        // Format: "YYYY-MM-DD"
+  mealType     MealType
+  status       BookingStatus @default(BOOKED)
+  qrToken      String        @unique
+  bookingCode  String?       @unique // Short readable code for manual entry (e.g. KT-482910)
+  redeemedAt   DateTime?
+  redeemedById Int?
+  redeemedBy   User?         @relation("StaffRedemptions", fields: [redeemedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([userId, date, mealType])
+  @@index([date, mealType, status])
+}
+
+model LeaveRequest {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate String   // Format: "YYYY-MM-DD"
+  endDate   String   // Format: "YYYY-MM-DD"
+  reason    String?
+  status    String   @default("ACTIVE") // "ACTIVE" or "CANCELLED"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BillingRecord {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month       String   // Format: "YYYY-MM" (e.g. "2026-10")
+  totalAmount Float    @default(3500.0)
+  paidAmount  Float    @default(0.0)
+  status      String   @default("UNPAID") // "PAID", "PARTIAL", "UNPAID"
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, month])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   String
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model StudentPreference {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dietType  String   @default("veg") // "veg", "non_veg", "egg"
+  allergies String[] @default([])    // ["Nuts", "Dairy", "Gluten", "Shellfish", "Soy", "Other"]
+  notes     String?  @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "BOOKING_CONFIRMED", "BOOKING_CANCELLED", "MESS_CLOSED", "LEAVE_ALERT", "BILLING_DUE", "SYSTEM_ALERT"
+  title     String
+  message   String
+  priority  String   @default("normal") // "low", "normal", "high"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+
