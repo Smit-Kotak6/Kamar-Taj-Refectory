@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const {
+  getDayMeals,
   getDashboard,
   getBookings,
   cancelMeal,
@@ -23,6 +24,7 @@ const {
 // All student routes require authentication and STUDENT role
 router.use(authenticate, authorize(['STUDENT']));
 
+router.get('/day', getDayMeals);
 router.get('/dashboard', getDashboard);
 router.get('/bookings', getBookings);
 router.get('/meals', getStudentMeals);

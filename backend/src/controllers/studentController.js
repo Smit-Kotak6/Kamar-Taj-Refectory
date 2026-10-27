@@ -960,11 +960,66 @@ const markAllNotificationsAsRead = async (req, res, next) => {
   }
 };
 
+const getDayMeals = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const date = (req.query.date || getCurrentDateIST()).toString().trim();
+
+    await ensureDefaultBookingsForDate(userId, date);
+
+    const [schedules, overrides, closures, bookings] = await Promise.all([
+      prisma.mealSchedule.findMany(),
+      prisma.mealScheduleOverride.findMany({ where: { date } }),
+      prisma.messClosure.findMany({ where: { date } }),
+      prisma.mealBooking.findMany({ where: { userId, date } })
+    ]);
+
+    const timingFor = (type) => {
+      const base = schedules.find((s) => s.mealType === type);
+      const o = overrides.find((x) => x.mealType === type);
+      return {
+        cutoffTime: o?.cutoffTime || base?.cutoffTime || null,
+        serviceStartTime: o?.serviceStartTime || base?.serviceStartTime || null,
+        serviceEndTime: o?.serviceEndTime || base?.serviceEndTime || null
+      };
+    };
+
+    const entireClosed = closures.some((c) => c.mealType === null);
+    const order = { BREAKFAST: 0, LUNCH: 1, DINNER: 2 };
+
+    const meals = bookings
+      .sort((a, b) => order[a.mealType] - order[b.mealType])
+      .map((b) => {
+        const t = timingFor(b.mealType);
+        const timingMissing = !t.cutoffTime || !t.serviceStartTime || !t.serviceEndTime;
+        const isClosed = entireClosed || closures.some((c) => c.mealType === b.mealType);
+        return {
+          id: b.id,
+          date: b.date,
+          mealType: b.mealType,
+          status: b.status,
+          bookingCode: b.bookingCode,
+          redeemedAt: b.redeemedAt,
+          ...t,
+          timingMissing,                       // spec 8.4: never guess a missing timing
+          cutoffPassed: timingMissing ? true : isCutoffPassed(b.date, t.cutoffTime),
+          isClosed,
+          closureNotice: isClosed ? 'UNAVAILABLE — MESS CLOSED' : null
+        };
+      });
+
+    return res.status(200).json({ success: true, serverNow: getServerNowIST(), date, meals });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getDashboard,
   getBookings,
   getBookingHistory,
   getStudentMeals,
+  getDayMeals,
   getPreferences,
   updatePreferences,
   getNotifications,
