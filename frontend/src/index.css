@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* `static` keeps every token available as a CSS variable (e.g. inside inline SVG styles). */
+@theme static {
+  /* Surfaces */
+  --color-cream: #fff7f0;
+  --color-card: #fffdfb;
+  --color-line: #f1e4d8;
+
+  /* Ink */
+  --color-ink: #16212f;
+
+  /* Brand */
+  --color-peach: #fde3d6;
+  --color-accent: #f26b3a; /* active nav, warning, countdowns */
+  --color-brand-orange: #ff9a5a;
+  --color-brand-pink: #f2597a;
+  --color-brand-purple: #7b5ce6;
+
+  /* Status */
+  --color-success: #1f7a4d;
+  --color-success-soft: #e3f4ea;
+  --color-danger: #c0394b;
+  --color-danger-soft: #fbe4e7;
+  --color-info: #7b5ce6;
+  --color-info-soft: #eee9fd;
+
+  /* Pastel icon tiles for stat cards (peach = --color-peach, lilac = info-soft, mint = success-soft) */
+  --color-sky-soft: #e1eefd;
+
+  /* Fonts */
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Shadows */
+  --shadow-soft:
+    0 1px 2px rgb(22 33 47 / 0.04), 0 10px 28px -12px rgb(120 70 40 / 0.18);
+}
+
+/* Hero gradient: orange -> pink -> purple */
+@utility bg-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brand-orange) 0%,
+    var(--color-brand-pink) 50%,
+    var(--color-brand-purple) 100%
+  );
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-cream font-sans text-ink antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif font-semibold text-ink;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-purple);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
