@@ -17,8 +17,8 @@ const defaults = [
 
 async function main() {
   for (const d of defaults)
-    await prisma.mealSchedule.upsert({ where: { mealType: d.mealType }, update: d, create: d });
-  console.log("Default schedule saved.");
+    await prisma.mealSchedule.upsert({ where: { mealType: d.mealType }, update: {}, create: d });
+  console.log("Default schedule present; existing admin timings preserved.");
 
   if (process.argv.includes("--open-now")) {
     const date = new Date(todayInTz());

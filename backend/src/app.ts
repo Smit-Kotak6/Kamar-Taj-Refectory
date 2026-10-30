@@ -1,5 +1,7 @@
 import express from "express";
 import type { ErrorRequestHandler } from "express";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { authRouter } from "./auth.js";
 import { mealsRouter } from "./meals.js";
 import { qrRouter } from "./qrRoutes.js";
@@ -40,6 +42,17 @@ app.use("/api/admin", adminOverviewRouter);
 app.use("/api/admin", adminRateRouter);
 app.use("/api/admin", adminWasteRouter);
 app.use("/api/admin", adminMenuRouter);
+app.use("/api", (_req, res) => res.status(404).json({ code: "NOT_FOUND", message: "Route not found" }));
+
+// In production, serve the Vite build on the same origin as the API.
+// Compiled location: backend/dist/src/app.js -> project/frontend/dist/.
+if (process.env.NODE_ENV === "production") {
+  const frontendDist = fileURLToPath(new URL("../../../frontend/dist/", import.meta.url));
+  const indexHtml = fileURLToPath(new URL("../../../frontend/dist/index.html", import.meta.url));
+  if (!existsSync(indexHtml)) throw new Error("Frontend build missing: build frontend before starting the production server");
+  app.use(express.static(frontendDist));
+  app.get("/{*path}", (_req, res) => res.sendFile(indexHtml));
+}
 app.use((_req, res) => res.status(404).json({ code: "NOT_FOUND", message: "Route not found" }));
 const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, next) => {
   if (res.headersSent) return next(error);
