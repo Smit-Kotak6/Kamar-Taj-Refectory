@@ -11,7 +11,7 @@ import {
   Pencil,
   XCircle,
 } from "lucide-react";
-import { cancelLeave, createLeave, getLeaves, getMeals, MEAL_TYPES, MESS_CLOSED_LABEL } from "../../api";
+import { cancelLeave, createLeave, updateLeave, getLeaves, getMeals, MEAL_TYPES, MESS_CLOSED_LABEL } from "../../api";
 import type { LeaveRequest, Meal, MealType } from "../../api";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -23,7 +23,7 @@ import { cx } from "../../lib/cx";
 
 // ------------------------------------------------------------------ helpers
 
-const MAX_RANGE_DAYS = 31;
+const MAX_RANGE_DAYS = 60;
 
 const MEAL_LABELS: Record<MealType, string> = {
   breakfast: "Breakfast",
@@ -230,27 +230,19 @@ export function Leave() {
     }
 
     setSubmitting(true);
-    let created = false;
     try {
-      // The API has no update call yet, so an edit is "register the new leave, then cancel the old one".
-      // Creating first means a rejected edit never loses the leave you already had.
-      await createLeave({
+      const input = {
         startDate: from,
         endDate: to,
         mealTypes,
         reason: reason.trim() || undefined,
-      });
-      created = true;
-      if (editingId) await cancelLeave(editingId);
+      };
+      if (editingId) await updateLeave(editingId, input);
+      else await createLeave(input);
       showToast(editingId ? "Leave updated." : "Leave registered.");
       resetForm();
     } catch (err) {
-      if (created) {
-        showToast(`Your new leave was saved, but the old one could not be cancelled: ${errorMessage(err)}`, "error");
-        resetForm();
-      } else {
-        showToast(errorMessage(err), "error");
-      }
+      showToast(errorMessage(err), "error");
     } finally {
       setSubmitting(false);
       void loadLeaves();
@@ -298,7 +290,7 @@ export function Leave() {
         as="h1"
         eyebrow="Leave"
         title="Going away? Skip the meals."
-        description="Register a leave and you won't be billed for the meals you miss."
+        description="Register leave to pause eligible meal bookings before their cutoff."
       />
 
       {/* ------------------------------------------------------- form card */}
@@ -498,7 +490,7 @@ export function Leave() {
           {sortedLeaves.map((leave) => {
             const isActive = leave.status === "ACTIVE";
             const ended = leave.endDate < today;
-            const canModify = isActive && !ended;
+            const canModify = isActive && !ended && leave.startDate >= today;
             const confirming = confirmingId === leave.id;
             const busy = busyId === leave.id;
 

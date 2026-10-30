@@ -10,6 +10,8 @@ export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner'];
 
 export type BookingStatus =
   | 'BOOKED'
+  | 'NOT_BOOKED'
+  | 'NOT_ELIGIBLE'
   | 'LOCKED'
   | 'REDEEMED'
   | 'EXPIRED_UNCONSUMED'
@@ -23,6 +25,8 @@ export const MESS_CLOSED_LABEL = 'UNAVAILABLE — MESS CLOSED';
 /** Human-friendly labels for each booking status. */
 export const STATUS_LABELS: Record<BookingStatus, string> = {
   BOOKED: 'Booked',
+  NOT_BOOKED: 'Not booked',
+  NOT_ELIGIBLE: 'Membership inactive',
   LOCKED: 'Locked',
   REDEEMED: 'Redeemed',
   EXPIRED_UNCONSUMED: 'Expired (not eaten)',
