@@ -1,163 +1,157 @@
 // src/api/index.ts
-// The ONLY file components should import data functions from.
-// Right now every function calls the in-memory mock after a small fake delay.
-// To go live, replace each body with a fetch() call that returns the same type, e.g.
-//
-//   export async function getMeals(date: string): Promise<Meal[]> {
-//     const res = await fetch(`/api/meals?date=${date}`);
-//     if (!res.ok) throw new ApiError('BAD_REQUEST', await res.text());
-//     return res.json();
-//   }
-
-import * as db from './mock';
+import { http } from './http';
 import type {
-  AdminOverview,
-  BillingItem,
   CreateLeaveInput,
-  ForecastPoint,
   LeaveRequest,
   Meal,
   MealType,
   Notification,
   Preferences,
   QrToken,
-  RebateEntry,
   RedeemResult,
   Timing,
   TimingOverride,
-  WasteStat,
 } from './types';
 
 export * from './types';
+export type { Payment, PaymentMethod } from './payments';
 
-const FAKE_DELAY_MS = 250;
-
-function delay(ms: number = FAKE_DELAY_MS): Promise<void> {
-  const jitter = Math.random() * 120;
-  return new Promise((resolve) => setTimeout(resolve, ms + jitter));
+/** A date on which one or more meals are closed (used by the admin Closures page). */
+export interface Closure {
+  /** 'YYYY-MM-DD' */
+  date: string;
+  /** The closed meals on that date, in breakfast, lunch, dinner order. */
+  mealTypes: MealType[];
+  /** true when all three meals are closed. */
+  entireMess: boolean;
 }
 
 // ----------------------------------------------------------------- meals
 
+const mealLabels: Record<MealType, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+const genericMealImage = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="#f7ead9"/><circle cx="120" cy="120" r="64" fill="#fff" stroke="#d9bca2" stroke-width="8"/><text x="120" y="136" text-anchor="middle" font-size="44">🍽</text></svg>')}`;
+
 export async function getMeals(date: string): Promise<Meal[]> {
-  await delay();
-  return db.getMeals(date);
+  type MealResponse = Pick<Meal, 'id' | 'type' | 'date' | 'status' | 'closed' | 'serviceStart' | 'serviceEnd' | 'cutoffAt'> & { menu: { title: string; description: string } | null };
+  const rows = await http<MealResponse[]>(`/api/meals?date=${encodeURIComponent(date)}`);
+  return rows.map(row => {
+    const label = mealLabels[row.type];
+    if (!label) throw new Error(`Unknown meal type: ${row.type}`);
+    return {
+      ...row,
+      title: row.menu?.title ?? label,
+      description: row.menu?.description || (row.menu ? 'Menu published by the mess.' : 'Menu details have not been published yet.'),
+      kcal: 0,
+      tags: [],
+      image: genericMealImage,
+    };
+  });
 }
 
 export async function setMealBooking(mealId: string, booked: boolean): Promise<Meal> {
-  await delay();
-  return db.setMealBooking(mealId, booked);
+  await http(`/api/meals/${encodeURIComponent(mealId)}/booking`, { method: 'PUT', body: { booked } });
+  const date = mealId.split('_')[0];
+  const meal = (await getMeals(date)).find(x => x.id === mealId);
+  if (!meal) throw new Error('Meal was not returned after saving.');
+  return meal;
 }
 
 // ----------------------------------------------------------------- leave
 
 export async function createLeave(input: CreateLeaveInput): Promise<LeaveRequest> {
-  await delay();
-  return db.createLeave(input);
+  return http<LeaveRequest>('/api/leaves', { method: 'POST', body: input });
 }
 
 export async function getLeaves(): Promise<LeaveRequest[]> {
-  await delay();
-  return db.getLeaves();
+  return http<LeaveRequest[]>('/api/leaves');
 }
 
 export async function cancelLeave(leaveId: string): Promise<LeaveRequest> {
-  await delay();
-  return db.cancelLeave(leaveId);
+  return http<LeaveRequest>(`/api/leaves/${encodeURIComponent(leaveId)}`, { method: 'DELETE' });
+}
+
+export async function updateLeave(leaveId: string, input: CreateLeaveInput): Promise<LeaveRequest> {
+  return http<LeaveRequest>(`/api/leaves/${encodeURIComponent(leaveId)}`, { method: 'PUT', body: input });
 }
 
 // -------------------------------------------------------------------- QR
 
-/** A new token on every call; each one expires 30 seconds after it is issued. */
 export async function getQrToken(mealId: string): Promise<QrToken> {
-  await delay(120);
-  return db.getQrToken(mealId);
+  return http<QrToken>(`/api/qr/${encodeURIComponent(mealId)}`, { method: 'POST' });
 }
 
-/** Accepts the full scanned token, or the short manual code. */
 export async function redeem(tokenOrCode: string): Promise<RedeemResult> {
-  await delay(150);
-  return db.redeem(tokenOrCode);
-}
-
-// -------------------------------------------------------- billing & rebates
-
-/** month = 'YYYY-MM'; defaults to the current month. */
-export async function getBilling(month?: string): Promise<BillingItem[]> {
-  await delay();
-  return db.getBilling(month);
-}
-
-/** Every entry is labelled "Demo policy" until the real rebate rules exist. */
-export async function getRebates(): Promise<RebateEntry[]> {
-  await delay();
-  return db.getRebates();
+  const value = tokenOrCode.trim();
+  return http<RedeemResult>('/api/staff/redeem', {
+    method: 'POST',
+    body: value.startsWith('KT1.') ? { token: value } : { manualCode: value },
+  });
 }
 
 // ------------------------------------------------ preferences & notifications
 
 export async function getPreferences(): Promise<Preferences> {
-  await delay();
-  return db.getPreferences();
+  return http<Preferences>('/api/student/preferences');
 }
 
 export async function savePreferences(preferences: Preferences): Promise<Preferences> {
-  await delay();
-  return db.savePreferences(preferences);
+  return http<Preferences>('/api/student/preferences', { method: 'PUT', body: preferences });
 }
 
 export async function getNotifications(): Promise<Notification[]> {
-  await delay();
-  return db.getNotifications();
+  return http<Notification[]>('/api/student/notifications');
 }
 
-// ------------------------------------------------------- admin analytics
-
-export async function getForecast(mealType: MealType = 'lunch'): Promise<ForecastPoint[]> {
-  await delay();
-  return db.getForecast(mealType);
+export async function markNotificationRead(id: string): Promise<void> {
+  await http(`/api/student/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
 }
 
-export async function getWasteStats(days: number = 7): Promise<WasteStat[]> {
-  await delay();
-  return db.getWasteStats(days);
-}
-
-export async function getAdminOverview(): Promise<AdminOverview> {
-  await delay();
-  return db.getAdminOverview();
+export async function markAllNotificationsRead(): Promise<void> {
+  await http('/api/student/notifications/read-all', { method: 'PATCH' });
 }
 
 // ------------------------------------------------- timings & closures
 
 /** Effective timings for a date (defaults to today). */
 export async function getTimings(date?: string): Promise<Timing[]> {
-  await delay();
-  return db.getTimings(date);
+  return http<Timing[]>(`/api/admin/timings${date ? `?date=${encodeURIComponent(date)}` : ''}`);
+}
+
+/**
+ * The default timings that apply to every day, ignoring any date-specific override.
+ * (Mock: a past date can never have an override, so it returns the defaults.
+ * A real backend should expose a dedicated endpoint.)
+ */
+export async function getDefaultTimings(): Promise<Timing[]> {
+  return http<Timing[]>('/api/admin/timings/defaults');
 }
 
 /** With `date`: override that day only. Without: change the default for every day. */
 export async function saveTimingOverride(override: TimingOverride): Promise<Timing[]> {
-  await delay();
-  return db.saveTimingOverride(override);
+  return http<Timing[]>('/api/admin/timings', { method: 'PUT', body: override });
 }
 
 /** Returns all three meals of that date, updated. */
-export async function closeMeal(date: string, mealType: MealType | 'all'): Promise<Meal[]> {
-  await delay();
-  return db.closeMeal(date, mealType);
+export async function closeMeal(date: string, mealType: MealType | 'all'): Promise<void> {
+  await http('/api/admin/closures', { method: 'POST', body: { date, mealType } });
 }
 
 /** Extra: undo a closure. Returns all three meals of that date, updated. */
-export async function reopenMeal(date: string, mealType: MealType | 'all'): Promise<Meal[]> {
-  await delay();
-  return db.reopenMeal(date, mealType);
+export async function reopenMeal(date: string, mealType: MealType | 'all'): Promise<void> {
+  await http(`/api/admin/closures?date=${encodeURIComponent(date)}&mealType=${encodeURIComponent(mealType)}`, { method: 'DELETE' });
+}
+
+/**
+ * Closures that have not finished yet, soonest first, looking `days` days ahead
+ * (today included). Meals whose service window has already ended are left out.
+ */
+export async function getUpcomingClosures(days: number = 30): Promise<Closure[]> {
+  return http<Closure[]>(`/api/admin/closures?days=${days}`);
 }
 
 // ------------------------------------------------------------- student
 
-/** The signed-in student. The mock returns a fixed demo student. */
 export async function getStudentProfile(): Promise<{ id: string; name: string }> {
-  await delay(80);
-  return { ...db.STUDENT };
+  const result = await http<{ user: { id: string; name: string } }>('/api/auth/me');
+  return { id: result.user.id, name: result.user.name };
 }

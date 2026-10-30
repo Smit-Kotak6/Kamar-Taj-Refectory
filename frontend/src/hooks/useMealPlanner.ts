@@ -62,6 +62,7 @@ const BOOKED_STATUSES: ReadonlySet<BookingStatus> = new Set<BookingStatus>([
 /** Statuses the student may still flip before the cutoff. */
 const EDITABLE_STATUSES: ReadonlySet<BookingStatus> = new Set<BookingStatus>([
   "BOOKED",
+  "NOT_BOOKED",
   "CANCELLED_BY_STUDENT",
 ]);
 

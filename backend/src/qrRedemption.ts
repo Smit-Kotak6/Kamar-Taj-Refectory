@@ -41,14 +41,8 @@
  */
 
 import crypto from "crypto";
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-// Path is relative to this file: backend/src/qrRedemption.ts -> backend/generated/prisma
-import { PrismaClient, MealType } from "../generated/prisma/client";
-
-// Prisma 7 requires a driver adapter; the DB URL comes from .env
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-export const prisma = new PrismaClient({ adapter });
+import type { MealType } from "../generated/prisma/client.js";
+import { prisma } from "./db.js";
 
 // ---------------------------------------------------------------------------
 // Token helpers
@@ -108,7 +102,7 @@ export type RedeemResult =
   | { ok: false; reason:
       | "FORBIDDEN" | "INVALID_CODE" | "ALREADY_REDEEMED" | "NOT_BOOKED"
       | "MESS_CLOSED" | "MEMBERSHIP_INACTIVE" | "TIMING_NOT_CONFIGURED"
-      | "OUTSIDE_SERVICE_WINDOW" };
+      | "OUTSIDE_SERVICE_WINDOW" | "QR_EXPIRED" };
 
 const fail = (reason: Extract<RedeemResult, { ok: false }>["reason"]): RedeemResult =>
   ({ ok: false, reason });
@@ -140,6 +134,7 @@ export async function redeemMeal(
   // 3. Fast, readable checks (friendly error messages for staff)
   if (booking.status === "REDEEMED") return fail("ALREADY_REDEEMED");
   if (booking.status !== "BOOKED") return fail("NOT_BOOKED");
+  if (!booking.qrExpiresAt || now >= booking.qrExpiresAt) return fail("QR_EXPIRED");
 
   // 4. Closure has priority over everything (Spec 10.3 / 10.5)
   const closed = await prisma.closure.findFirst({
@@ -166,14 +161,20 @@ export async function redeemMeal(
   try {
     await prisma.$transaction(async (tx) => {
       const res = await tx.booking.updateMany({
-        where: { id: booking.id, status: "BOOKED", redeemedAt: null },
+        where: { id: booking.id, status: "BOOKED", redeemedAt: null,
+          qrExpiresAt: { gt: now },
+          ...(input.token ? { qrTokenHash: sha256(input.token) } : { manualCode: normalizeCode(input.manualCode!) }) },
         data: { status: "REDEEMED", redeemedAt: now, redeemedById: staff.id },
       });
       if (res.count !== 1) throw new Error("RACE_LOST");
       await tx.consumption.create({ data: { bookingId: booking.id, staffId: staff.id } });
+      await tx.notification.create({ data: { userId: booking.studentId, kind: "success", title: "Meal checked in", body: `${booking.mealType.toLowerCase()} on ${booking.mealDate.toISOString().slice(0, 10)} was checked in.` } });
     });
   } catch (e: any) {
-    if (e.message === "RACE_LOST" || e.code === "P2002") return fail("ALREADY_REDEEMED");
+    if (e.message === "RACE_LOST" || e.code === "P2002") {
+      const latest = await prisma.booking.findUnique({ where: { id: booking.id } });
+      return fail(latest?.status === "REDEEMED" ? "ALREADY_REDEEMED" : "QR_EXPIRED");
+    }
     throw e;
   }
 

@@ -6,11 +6,11 @@
  */
 import crypto from "crypto";
 import {
-  prisma,
   redeemMeal,
   generateBookingSecrets,
   setServiceWindowProvider,
-} from "./qrRedemption";
+} from "./qrRedemption.js";
+import { prisma } from "./db.js";
 
 async function main() {
   const stamp = Date.now();

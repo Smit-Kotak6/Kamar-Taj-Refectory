@@ -22,6 +22,8 @@ interface StatusMeta {
 // src/api/types.ts that is missing from this map.
 const STATUS_META: Record<BookingStatus, StatusMeta> = {
   BOOKED: { label: "Booked", variant: "info", icon: CalendarCheck },
+  NOT_BOOKED: { label: "Not booked", variant: "neutral", icon: XCircle },
+  NOT_ELIGIBLE: { label: "Membership inactive", variant: "warning", icon: Lock },
   LOCKED: { label: "Locked", variant: "warning", icon: Lock },
   REDEEMED: { label: "Redeemed", variant: "success", icon: CheckCircle2 },
   EXPIRED_UNCONSUMED: { label: "Expired — Unconsumed", variant: "danger", icon: Clock },

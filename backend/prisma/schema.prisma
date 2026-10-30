@@ -28,6 +28,13 @@ model User {
   role       String      @default("STUDENT")
   membership Membership?
   bookings   Booking[]
+  credential AuthCredential?
+  sessions   AuthSession[]
+  leaves     Leave[]
+  preferences StudentPreferences?
+  notifications Notification[]
+  wasteRecords MeasuredWaste[]
+  publishedMenus PublishedMenu[]
 }
 
 model Membership {
@@ -54,6 +61,7 @@ model Booking {
   status       BookingStatus @default(BOOKED)
   qrTokenHash  String        @unique
   manualCode   String        @unique
+  qrExpiresAt  DateTime?
   redeemedAt   DateTime?
   redeemedById String?
   student      User          @relation(fields: [studentId], references: [id])
@@ -108,6 +116,99 @@ model MealForecast {
   predictedRate Float
   modelInfo     String
   createdAt     DateTime @default(now())
+
+  @@id([date, mealType])
+}
+model AuthCredential {
+  userId String @id
+  passwordHash String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model AuthSession {
+  tokenHash String @id
+  userId String
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Leave {
+  id        String     @id @default(cuid())
+  userId    String
+  startDate DateTime   @db.Date
+  endDate   DateTime   @db.Date
+  mealTypes MealType[]
+  reason    String     @default("")
+  status    String     @default("ACTIVE")
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, startDate, endDate])
+}
+
+model StudentPreferences {
+  userId          String  @id
+  diet            String  @default("veg")
+  allergies       String[] @default([])
+  notes           String  @default("")
+  reminderEnabled Boolean @default(true)
+  reminderMinutes Int     @default(30)
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model MealRateVersion {
+  mealType      MealType
+  effectiveFrom DateTime @db.Date
+  amountPaise   Int
+
+  @@id([mealType, effectiveFrom])
+}
+
+model MealRateOverride {
+  date        DateTime @db.Date
+  mealType    MealType
+  amountPaise Int
+
+  @@id([date, mealType])
+}
+
+model MeasuredWaste {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date
+  mealType      MealType
+  preparedGrams Int
+  wastedGrams   Int
+  note          String   @default("")
+  recordedById  String
+  recordedBy    User     @relation(fields: [recordedById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([date, mealType])
+}
+
+model PublishedMenu {
+  date          DateTime @db.Date
+  mealType      MealType
+  title         String
+  description   String   @default("")
+  publishedById String
+  publishedBy   User     @relation(fields: [publishedById], references: [id])
+  updatedAt     DateTime @updatedAt
 
   @@id([date, mealType])
 }

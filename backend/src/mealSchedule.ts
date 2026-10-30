@@ -5,10 +5,8 @@
  * All times are wall-clock times in the INSTITUTE timezone, converted on the SERVER.
  * Missing or invalid timing => returns null => the operation is BLOCKED (never guessed).
  */
-import { Router } from "express";
-import { MealType } from "../generated/prisma/client";
-import { prisma } from "./qrRedemption";
-import { requireRole } from "./routes";
+import type { MealType } from "../generated/prisma/client.js";
+import { prisma } from "./db.js";
 
 export const TZ = process.env.INSTITUTE_TZ ?? "Asia/Kolkata";
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -64,46 +62,3 @@ export const serviceWindow = async (mealType: MealType, mealDate: Date) => {
   return t ? { start: t.start, end: t.end } : null;
 };
 
-// ---- routes ----
-export const scheduleRouter = Router();
-
-// Anyone logged in: timings + availability for a date (defaults to today, institute time)
-scheduleRouter.get(
-  "/api/meals/timings",
-  requireRole("STUDENT", "STAFF", "ADMIN", "SUPER_ADMIN"),
-  async (req, res) => {
-    const q = String(req.query.date ?? todayInTz());
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(q)) return res.status(400).json({ error: "date must be YYYY-MM-DD" });
-    const date = new Date(q);
-    const out = [];
-    for (const mealType of MEALS) {
-      const times = await resolveMealTimes(mealType, date);
-      const closed = await prisma.closure.findFirst({
-        where: { date, OR: [{ mealType: null }, { mealType }] },
-      });
-      out.push({
-        mealType,
-        status: closed ? "UNAVAILABLE — MESS CLOSED" : times ? "OK" : "TIMING_NOT_CONFIGURED",
-        times, // UTC instants; frontend formats them in the institute timezone
-      });
-    }
-    res.json(out);
-  }
-);
-
-// Admin: override ONE meal on ONE date (send only the fields you want to change)
-scheduleRouter.put("/api/admin/override", requireRole("ADMIN", "SUPER_ADMIN"), async (req, res) => {
-  const { date, mealType, cutoffTime, serviceStart, serviceEnd } = req.body ?? {};
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return res.status(400).json({ error: "date must be YYYY-MM-DD" });
-  if (!MEALS.includes(mealType)) return res.status(400).json({ error: "invalid mealType" });
-  for (const t of [cutoffTime, serviceStart, serviceEnd])
-    if (t !== undefined && !HHMM.test(String(t))) return res.status(400).json({ error: "times must be HH:MM (24h)" });
-
-  const d = new Date(date);
-  const row = await prisma.mealOverride.upsert({
-    where: { date_mealType: { date: d, mealType } },
-    update: { cutoffTime, serviceStart, serviceEnd },
-    create: { date: d, mealType, cutoffTime, serviceStart, serviceEnd },
-  });
-  res.json(row);
-});

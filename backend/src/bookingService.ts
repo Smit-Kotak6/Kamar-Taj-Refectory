@@ -1,7 +1,8 @@
 /** Creates ONE booking. Later, your nightly/default-booking job calls this per eligible student+meal. */
 import crypto from "crypto";
-import { MealType } from "../generated/prisma/client";
-import { prisma, generateBookingSecrets } from "./qrRedemption";
+import type { MealType } from "../generated/prisma/client.js";
+import { prisma } from "./db.js";
+import { generateBookingSecrets } from "./qrRedemption.js";
 
 export async function createBooking(studentId: string, mealType: MealType, mealDate: Date) {
   const student = await prisma.user.findUnique({

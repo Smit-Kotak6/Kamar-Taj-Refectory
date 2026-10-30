@@ -6,8 +6,8 @@
  *   npx tsx src/seedSchedule.ts             -> default schedule
  *   npx tsx src/seedSchedule.ts --open-now  -> ALSO override today's meals to be open all day (for testing)
  */
-import { prisma } from "./qrRedemption";
-import { todayInTz } from "./mealSchedule";
+import { prisma } from "./db.js";
+import { todayInTz } from "./mealSchedule.js";
 
 const defaults = [
   { mealType: "BREAKFAST", cutoffTime: "06:30", serviceStart: "07:30", serviceEnd: "09:30" },

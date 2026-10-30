@@ -6,6 +6,7 @@ import {
   FileText,
   House,
   LayoutDashboard,
+  Users,
   Leaf,
   QrCode,
   ScanLine,
@@ -13,6 +14,8 @@ import {
   TrendingUp,
   UtensilsCrossed,
   Wallet,
+  IndianRupee,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -71,7 +74,10 @@ export const ROLE_CONFIG: Record<Role, RoleConfig> = {
     nav: [
       { label: 'Overview', to: '/admin', icon: LayoutDashboard, end: true },
       { label: 'Meal Planning', shortLabel: 'Planning', to: '/admin/planning', icon: CalendarDays },
+      { label: 'Publish Menu', to: '/admin/menu', icon: BookOpen },
       { label: 'Closures', to: '/admin/closures', icon: DoorClosed },
+      { label: 'Memberships', to: '/admin/memberships', icon: Users },
+      { label: 'Meal Rates', to: '/admin/rates', icon: IndianRupee },
       { label: 'Demand Forecast', shortLabel: 'Forecast', to: '/admin/forecast', icon: TrendingUp },
       { label: 'Waste & Sustainability', shortLabel: 'Waste', to: '/admin/waste', icon: Leaf },
       { label: 'Reports', to: '/admin/reports', icon: FileText },

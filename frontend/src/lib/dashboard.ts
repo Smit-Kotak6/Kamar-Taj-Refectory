@@ -61,7 +61,7 @@ export interface MealActionState {
 
 export function getMealActions(meal: Meal, now: number): MealActionState {
   const passed = isCutoffPassed(meal, now);
-  const canOptIn = !passed && meal.status === "CANCELLED_BY_STUDENT";
+  const canOptIn = !passed && (meal.status === "CANCELLED_BY_STUDENT" || meal.status === "NOT_BOOKED");
   const canCancel = !passed && meal.status === "BOOKED";
 
   const blocked = (can: boolean, fallback: string): string | undefined => {

@@ -1,6 +1,6 @@
 /** Creates a demo staff, a demo student with membership, and today's 3 bookings. Safe to re-run. */
-import { prisma } from "./qrRedemption";
-import { createBooking } from "./bookingService";
+import { prisma } from "./db.js";
+import { createBooking } from "./bookingService.js";
 
 async function main() {
   const staff = await prisma.user.upsert({
